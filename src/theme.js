@@ -13,4 +13,6 @@ export const THEME = {
 
   light: { road: '#4a4e57', verge: '#5f8a55', rumble: '#d8dde3' },
   dark: { road: '#454951', verge: '#57804e', rumble: '#b6353c' },
+
+  car: { shell: '#d9534a', glass: '#2b3038', lamp: '#ffd9a0' },
 };

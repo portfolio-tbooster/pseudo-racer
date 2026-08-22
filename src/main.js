@@ -1,5 +1,8 @@
 import { buildTrack, segmentAt, trackLength, ROAD_WIDTH, SEGMENT_LENGTH } from './road.js';
 import { randomSeed } from './rng.js';
+import { createPlayer, updatePlayer, MAX_SPEED } from './player.js';
+import { attachInput } from './input.js';
+import { drawCar } from './car.js';
 import { project, drawSegment } from './render.js';
 import { THEME } from './theme.js';
 
@@ -19,7 +22,8 @@ function readSeed() {
 const segments = buildTrack(readSeed());
 const cameraDepth = 1 / Math.tan(((FIELD_OF_VIEW / 2) * Math.PI) / 180);
 
-let position = 0;
+const player = createPlayer();
+const input = attachInput();
 let width = 0;
 let height = 0;
 
@@ -31,7 +35,7 @@ function draw() {
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, width, height);
 
-  const base = segmentAt(segments, position);
+  const base = segmentAt(segments, player.position);
   // Ride the road rather than float over it: the camera sits a fixed height
   // above whatever the road is doing underneath.
   const cameraY = CAMERA_HEIGHT + base.p1.world.y;
@@ -44,15 +48,15 @@ function draw() {
   // nudged sideways by the accumulated curve of everything in front of it,
   // which is indistinguishable from a corner and costs two additions.
   let x = 0;
-  let dx = -(base.curve * ((position % SEGMENT_LENGTH) / SEGMENT_LENGTH));
+  let dx = -(base.curve * ((player.position % SEGMENT_LENGTH) / SEGMENT_LENGTH));
 
   for (let n = 0; n < DRAW_DISTANCE; n++) {
     const segment = segments[(base.index + n) % segments.length];
     const looped = segment.index < base.index;
-    const cameraZ = position - (looped ? trackLength(segments) : 0);
+    const cameraZ = player.position - (looped ? trackLength(segments) : 0);
 
-    project(segment.p1, -x, cameraY, cameraZ, cameraDepth, width, height, ROAD_WIDTH);
-    project(segment.p2, -x - dx, cameraY, cameraZ, cameraDepth, width, height, ROAD_WIDTH);
+    project(segment.p1, player.x * ROAD_WIDTH - x, cameraY, cameraZ, cameraDepth, width, height, ROAD_WIDTH);
+    project(segment.p2, player.x * ROAD_WIDTH - x - dx, cameraY, cameraZ, cameraDepth, width, height, ROAD_WIDTH);
 
     x += dx;
     dx += segment.curve;
@@ -69,6 +73,11 @@ function draw() {
 
     maxy = segment.p2.screen.y;
   }
+
+  // Bob the car with the road under it and lean it into the steering.
+  const bounce = Math.sin(player.position / 40) * (player.speed / MAX_SPEED) * 4;
+  const steer = input.left ? -1 : input.right ? 1 : 0;
+  drawCar(ctx, width, height, steer, bounce);
 }
 
 let last = performance.now();
@@ -80,7 +89,7 @@ function frame(now) {
   const dt = Math.min(1, Math.max(0, (now - last) / 1000));
   last = now;
 
-  position = (position + SEGMENT_LENGTH * 12 * dt) % trackLength(segments);
+  updatePlayer(player, input, dt, trackLength(segments));
 
   draw();
   requestAnimationFrame(frame);
