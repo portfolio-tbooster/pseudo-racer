@@ -16,13 +16,18 @@ const ACCEL = MAX_SPEED / 5;
 const BRAKING = -MAX_SPEED;
 const COAST = -MAX_SPEED / 5;
 
+/** How hard a corner throws the car outward. Tuned by feel, not by physics. */
+const CENTRIFUGAL = 0.32;
+const OFF_ROAD_DECEL = -MAX_SPEED / 2;
+const OFF_ROAD_LIMIT = MAX_SPEED / 4;
+
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 export function createPlayer() {
   return { position: 0, speed: 0, x: 0 };
 }
 
-export function updatePlayer(player, input, dt, trackLen) {
+export function updatePlayer(player, input, dt, trackLen, segment) {
   // Steering authority scales with speed: a stationary car does not turn.
   const steer = dt * 2 * (player.speed / MAX_SPEED);
   if (input.left) player.x -= steer;
@@ -31,6 +36,20 @@ export function updatePlayer(player, input, dt, trackLen) {
   if (input.throttle) player.speed += ACCEL * dt;
   else if (input.brake) player.speed += BRAKING * dt;
   else player.speed += COAST * dt;
+
+  // A corner pushes the car to the outside, harder the faster you take it.
+  // This is what makes the track something you drive rather than a corridor
+  // you hold a key down in.
+  player.speed = clamp(player.speed, 0, MAX_SPEED);
+  player.x -= steer * (player.speed / MAX_SPEED) * segment.curve * CENTRIFUGAL;
+
+  // Off the tarmac, scrub off speed down to a crawl. The limit rather than a
+  // hard stop is deliberate — a spin that beaches you completely is a reload,
+  // and a mistake the player can drive out of is a better mistake.
+  player.offRoad = Math.abs(player.x) > 1;
+  if (player.offRoad && player.speed > OFF_ROAD_LIMIT) {
+    player.speed += OFF_ROAD_DECEL * dt;
+  }
 
   player.speed = clamp(player.speed, 0, MAX_SPEED);
   player.x = clamp(player.x, -2, 2);

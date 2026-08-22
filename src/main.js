@@ -75,7 +75,8 @@ function draw() {
   }
 
   // Bob the car with the road under it and lean it into the steering.
-  const bounce = Math.sin(player.position / 40) * (player.speed / MAX_SPEED) * 4;
+  const shake = player.offRoad ? (Math.random() - 0.5) * 6 * (player.speed / MAX_SPEED) : 0;
+  const bounce = Math.sin(player.position / 40) * (player.speed / MAX_SPEED) * 4 + shake;
   const steer = input.left ? -1 : input.right ? 1 : 0;
   drawCar(ctx, width, height, steer, bounce);
 }
@@ -89,7 +90,7 @@ function frame(now) {
   const dt = Math.min(1, Math.max(0, (now - last) / 1000));
   last = now;
 
-  updatePlayer(player, input, dt, trackLength(segments));
+  updatePlayer(player, input, dt, trackLength(segments), segmentAt(segments, player.position));
 
   draw();
   requestAnimationFrame(frame);
