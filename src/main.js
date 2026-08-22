@@ -1,4 +1,5 @@
-import { straightRoad, segmentAt, trackLength, ROAD_WIDTH, SEGMENT_LENGTH } from './road.js';
+import { buildTrack, segmentAt, trackLength, ROAD_WIDTH, SEGMENT_LENGTH } from './road.js';
+import { randomSeed } from './rng.js';
 import { project, drawSegment } from './render.js';
 import { THEME } from './theme.js';
 
@@ -9,7 +10,13 @@ const DRAW_DISTANCE = 300; // segments
 const canvas = document.getElementById('stage');
 const ctx = canvas.getContext('2d');
 
-const segments = straightRoad();
+/** A seed in the URL makes any circuit reproducible by link. */
+function readSeed() {
+  const fromUrl = Number(new URLSearchParams(location.search).get('seed'));
+  return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl >>> 0 : randomSeed();
+}
+
+const segments = buildTrack(readSeed());
 const cameraDepth = 1 / Math.tan(((FIELD_OF_VIEW / 2) * Math.PI) / 180);
 
 let position = 0;
@@ -25,18 +32,30 @@ function draw() {
   ctx.fillRect(0, 0, width, height);
 
   const base = segmentAt(segments, position);
+  // Ride the road rather than float over it: the camera sits a fixed height
+  // above whatever the road is doing underneath.
+  const cameraY = CAMERA_HEIGHT + base.p1.world.y;
 
   // Near to far. Each segment is only drawn in the sliver left above the one
   // in front of it, so 300 segments cost barely more than a dozen.
   let maxy = height;
+
+  // Curvature is not geometry — the road never actually bends. Each segment is
+  // nudged sideways by the accumulated curve of everything in front of it,
+  // which is indistinguishable from a corner and costs two additions.
+  let x = 0;
+  let dx = -(base.curve * ((position % SEGMENT_LENGTH) / SEGMENT_LENGTH));
 
   for (let n = 0; n < DRAW_DISTANCE; n++) {
     const segment = segments[(base.index + n) % segments.length];
     const looped = segment.index < base.index;
     const cameraZ = position - (looped ? trackLength(segments) : 0);
 
-    project(segment.p1, 0, CAMERA_HEIGHT, cameraZ, cameraDepth, width, height, ROAD_WIDTH);
-    project(segment.p2, 0, CAMERA_HEIGHT, cameraZ, cameraDepth, width, height, ROAD_WIDTH);
+    project(segment.p1, -x, cameraY, cameraZ, cameraDepth, width, height, ROAD_WIDTH);
+    project(segment.p2, -x - dx, cameraY, cameraZ, cameraDepth, width, height, ROAD_WIDTH);
+
+    x += dx;
+    dx += segment.curve;
 
     if (segment.p1.camera.z <= cameraDepth) continue; // behind the camera
     if (segment.p2.screen.y >= maxy) continue; // hidden by a nearer segment
