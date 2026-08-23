@@ -3,7 +3,7 @@ import { randomSeed } from './rng.js';
 import { createPlayer, updatePlayer, MAX_SPEED } from './player.js';
 import { attachInput } from './input.js';
 import { drawCar } from './car.js';
-import { project, drawSegment } from './render.js';
+import { project, drawSegment, drawProp, drawHills } from './render.js';
 import { THEME } from './theme.js';
 
 const FIELD_OF_VIEW = 100; // degrees
@@ -23,6 +23,7 @@ const segments = buildTrack(readSeed());
 const cameraDepth = 1 / Math.tan(((FIELD_OF_VIEW / 2) * Math.PI) / 180);
 
 const player = createPlayer();
+let skyOffset = 0;
 const input = attachInput();
 let width = 0;
 let height = 0;
@@ -34,6 +35,7 @@ function draw() {
   sky.addColorStop(1, THEME.sky[1]);
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, width, height);
+  drawHills(ctx, width, height, THEME, skyOffset);
 
   const base = segmentAt(segments, player.position);
   // Ride the road rather than float over it: the camera sits a fixed height
@@ -43,6 +45,7 @@ function draw() {
   // Near to far. Each segment is only drawn in the sliver left above the one
   // in front of it, so 300 segments cost barely more than a dozen.
   let maxy = height;
+  const visible = [];
 
   // Curvature is not geometry — the road never actually bends. Each segment is
   // nudged sideways by the accumulated curve of everything in front of it,
@@ -72,6 +75,16 @@ function draw() {
     );
 
     maxy = segment.p2.screen.y;
+    if (segment.props) visible.push(segment);
+  }
+
+  // Scenery goes back to front, after the road, so a near tree covers a far
+  // one and neither is painted over by tarmac drawn later.
+  for (let i = visible.length - 1; i >= 0; i--) {
+    const segment = visible[i];
+    for (const prop of segment.props) {
+      drawProp(ctx, prop, THEME, segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w);
+    }
   }
 
   // Bob the car with the road under it and lean it into the steering.
@@ -90,7 +103,12 @@ function frame(now) {
   const dt = Math.min(1, Math.max(0, (now - last) / 1000));
   last = now;
 
-  updatePlayer(player, input, dt, trackLength(segments), segmentAt(segments, player.position));
+  const here = segmentAt(segments, player.position);
+  updatePlayer(player, input, dt, trackLength(segments), here);
+
+  // The background slides opposite the corner, which is most of what sells a
+  // bend as a change of direction rather than the road sliding sideways.
+  skyOffset += here.curve * (player.speed / MAX_SPEED) * dt * 220;
 
   draw();
   requestAnimationFrame(frame);

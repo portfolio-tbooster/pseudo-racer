@@ -45,3 +45,52 @@ export function drawSegment(ctx, width, x1, y1, w1, x2, y2, w2, palette, dark) {
 }
 
 export { RUMBLE_LENGTH };
+
+/**
+ * One roadside prop, drawn from flat shapes at whatever size the perspective
+ * says it should be.
+ *
+ * `screen.w` is the projected half-width of the road, so sizing props against
+ * it means they shrink with distance for free — no second projection.
+ */
+export function drawProp(ctx, prop, theme, screenX, groundY, roadHalfWidth) {
+  const shape = theme.props[prop.kind];
+  if (!shape) return;
+
+  const w = roadHalfWidth * 0.55 * prop.size;
+  const x = screenX + roadHalfWidth * prop.offset;
+
+  for (const part of shape.parts) {
+    ctx.fillStyle = part.c;
+    if (part.t === 'rect') {
+      ctx.fillRect(x + part.x * w, groundY - (part.y + part.h) * w, part.w * w, part.h * w);
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(x + (part.x + part.w / 2) * w, groundY - (part.y + part.h) * w);
+      ctx.lineTo(x + (part.x + part.w) * w, groundY - part.y * w);
+      ctx.lineTo(x + part.x * w, groundY - part.y * w);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+}
+
+/** Parallax hills, drawn as summed sine waves rather than an image. */
+export function drawHills(ctx, width, height, theme, offset) {
+  const horizon = height * 0.5;
+  theme.hills.forEach((layer, i) => {
+    ctx.fillStyle = layer.shade;
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+    for (let px = 0; px <= width; px += 8) {
+      const t = (px + offset * layer.drift) / width;
+      const y =
+        horizon -
+        height * layer.amplitude * (Math.sin(t * 5.2 + i) * 0.6 + Math.sin(t * 11.3 + i * 2) * 0.4);
+      ctx.lineTo(px, y);
+    }
+    ctx.lineTo(width, height);
+    ctx.closePath();
+    ctx.fill();
+  });
+}

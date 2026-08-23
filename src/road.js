@@ -89,11 +89,33 @@ export function buildTrack(seed, sections = 22) {
     addStretch(segments, length[0], length[1], length[2], curve, height);
   }
 
+  scatter(segments, rand);
+
   // Return to the starting elevation, or the seam is a step.
   const drop = lastY(segments) / SEGMENT_LENGTH;
   addStretch(segments, 40, 60, 40, 0, -drop);
 
   return segments;
+}
+
+/**
+ * Scatter scenery down both verges.
+ *
+ * Density rises the further from the tarmac, which is what reads as a verge
+ * thinning into countryside rather than a row of identical bollards.
+ */
+function scatter(segments, rand) {
+  for (const segment of segments) {
+    if (rand() > 0.14) continue;
+    const side = rand() < 0.5 ? -1 : 1;
+    segment.props = [
+      {
+        offset: side * (1.3 + rand() * 3.2),
+        kind: Math.floor(rand() * 4),
+        size: 0.7 + rand() * 0.7,
+      },
+    ];
+  }
 }
 
 export const trackLength = (segments) => segments.length * SEGMENT_LENGTH;
