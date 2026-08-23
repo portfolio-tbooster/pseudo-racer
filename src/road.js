@@ -79,7 +79,7 @@ export function buildTrack(seed, sections = 22) {
 
   for (let n = 0; n < sections; n++) {
     const length = pick([[20, 40, 20], [30, 70, 30], [50, 120, 50]]);
-    const curve = pick([0, 0, 2, -2, 4, -4, 6, -6]);
+    const curve = pick([0, 0, 2, -2, 3, -3, 5, -5]);
 
     const drift = lastY(segments) / SEGMENT_LENGTH;
     const rise = pick([0, 0, 20, 40]);

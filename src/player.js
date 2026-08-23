@@ -16,8 +16,20 @@ const ACCEL = MAX_SPEED / 5;
 const BRAKING = -MAX_SPEED;
 const COAST = -MAX_SPEED / 5;
 
-/** How hard a corner throws the car outward. Tuned by feel, not by physics. */
-const CENTRIFUGAL = 0.32;
+/**
+ * How hard a corner throws the car outward.
+ *
+ * Worth doing the arithmetic rather than picking a number that feels right in
+ * isolation. Steering moves the car by `dt * 2 * speedPercent`; centrifugal
+ * moves it back by that same step times `speedPercent * curve * CENTRIFUGAL`.
+ * So the car can only hold a corner while `speedPercent * curve * CENTRIFUGAL`
+ * stays under 1 — at 0.24 and a sharpest curve of 5, that is 83% of top speed.
+ *
+ * Above that the corner is genuinely untakeable and you have to lift, which is
+ * the point. Much higher and the track becomes undriveable rather than
+ * demanding; much lower and the throttle is the only control that matters.
+ */
+const CENTRIFUGAL = 0.24;
 const OFF_ROAD_DECEL = -MAX_SPEED / 2;
 const OFF_ROAD_LIMIT = MAX_SPEED / 4;
 
