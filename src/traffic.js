@@ -1,5 +1,5 @@
 import { mulberry32 } from './rng.js';
-import { SEGMENT_LENGTH } from './road.js';
+import { SEGMENT_LENGTH, CAR_WIDTH, CAR_HALF_LENGTH, PLAYER_Z, TRAFFIC_LANES } from './road.js';
 import { MAX_SPEED } from './player.js';
 import { THEME } from './theme.js';
 
@@ -12,12 +12,7 @@ import { THEME } from './theme.js';
  * constant-velocity obstacle is indistinguishable from a driver.
  */
 
-/** Half the length of a car, in track units, for the overlap test. */
-const CAR_DEPTH = SEGMENT_LENGTH * 1.1;
-/** How close in lanes counts as the same piece of road. */
-const CAR_WIDTH = 0.82;
-
-export function createTraffic(seed, trackLen, count = 34) {
+export function createTraffic(seed, trackLen, count = 24) {
   const rand = mulberry32(seed ^ 0x5f3759df);
   const cars = [];
 
@@ -25,7 +20,9 @@ export function createTraffic(seed, trackLen, count = 34) {
     cars.push({
       // Spread evenly with jitter, so there is never a convoy or a bare lap.
       z: ((i + rand() * 0.7) / count) * trackLen,
-      x: -0.7 + rand() * 1.4,
+      // A lane, not a random offset. Cars scattered anywhere across the road
+      // leave no gap wide enough to overtake through.
+      x: TRAFFIC_LANES[Math.floor(rand() * TRAFFIC_LANES.length)],
       speed: MAX_SPEED * (0.32 + rand() * 0.3),
       colors: THEME.traffic[Math.floor(rand() * THEME.traffic.length)],
     });
@@ -50,12 +47,17 @@ function loopDelta(a, b, trackLen) {
 
 /** The car the player is currently occupying the same space as, if any. */
 export function collidingCar(player, cars, trackLen) {
+  // Tested where the car actually is — a fixed distance ahead of the camera —
+  // not at the camera itself.
+  const nose = player.position + PLAYER_Z;
+
   for (const car of cars) {
-    const dz = loopDelta(player.position, car.z, trackLen);
-    if (dz > -CAR_DEPTH && dz < CAR_DEPTH && Math.abs(car.x - player.x) < CAR_WIDTH) {
-      return car;
-    }
+    const dz = loopDelta(nose, car.z, trackLen);
+    const overlapping = dz > -CAR_HALF_LENGTH && dz < CAR_HALF_LENGTH;
+    // Two half-widths: they touch when their centres are one car-width apart.
+    if (overlapping && Math.abs(car.x - player.x) < CAR_WIDTH) return car;
   }
+
   return null;
 }
 
@@ -67,7 +69,13 @@ export function collidingCar(player, cars, trackLen) {
  */
 export function applyCollision(player, car) {
   player.speed = Math.min(player.speed, car.speed * 0.45);
-  player.x += player.x > car.x ? 0.22 : -0.22;
+
+  // Shoved fully clear, not nudged. A knock smaller than the collision box
+  // leaves the two cars still overlapping on the next frame, so contact
+  // repeats every frame until something drifts apart — which feels like being
+  // held against the car rather than bouncing off it.
+  const side = player.x >= car.x ? 1 : -1;
+  player.x = car.x + side * CAR_WIDTH * 1.08;
 }
 
 /** Which segment each car is sitting on, for the back-to-front draw. */

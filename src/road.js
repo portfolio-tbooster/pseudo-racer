@@ -8,8 +8,34 @@
 
 export const SEGMENT_LENGTH = 200;
 export const RUMBLE_LENGTH = 3;
-export const ROAD_WIDTH = 2000;
+export const ROAD_WIDTH = 2000; // half-width, so the road spans -1 to 1 in x
 export const LANES = 3;
+
+/**
+ * A car's width, as a fraction of ROAD_WIDTH — about two thirds of a lane.
+ *
+ * This single number drives both how a car is *drawn* and when two of them
+ * *touch*. They were separate constants once and drifted apart, which is the
+ * only way to get a game where you collide with cars you can see you missed.
+ */
+export const CAR_WIDTH = 0.42;
+
+/** Half a car's length, in track units, for the overlap test. */
+export const CAR_HALF_LENGTH = 700;
+
+/**
+ * How far in front of the camera the player's car sits.
+ *
+ * The camera rides behind the car, so the player is an object in the world at
+ * a fixed distance, not a sprite pinned to the bottom of the screen. Getting
+ * this wrong is what made oncoming traffic eleven times the size of the car
+ * you were driving: collisions were tested at the camera while the player was
+ * drawn as though eight segments further down the road.
+ */
+export const PLAYER_Z = 1600;
+
+/** Traffic holds one of three lanes, far enough apart to drive between. */
+export const TRAFFIC_LANES = [-0.62, 0, 0.62];
 
 import { mulberry32 } from './rng.js';
 

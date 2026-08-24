@@ -1,4 +1,4 @@
-import { RUMBLE_LENGTH, LANES } from './road.js';
+import { RUMBLE_LENGTH, LANES, ROAD_WIDTH, CAR_WIDTH } from './road.js';
 
 /**
  * Perspective projection, one division per point.
@@ -15,6 +15,14 @@ export function project(p, cameraX, cameraY, cameraZ, cameraDepth, width, height
   p.screen.x = Math.round(width / 2 + (p.screen.scale * p.camera.x * width) / 2);
   p.screen.y = Math.round(height / 2 - (p.screen.scale * p.camera.y * height) / 2);
   p.screen.w = Math.round((p.screen.scale * roadWidth * width) / 2);
+}
+
+/**
+ * How wide a car looks at distance `z`. The same formula the road uses, which
+ * is the point — a car and the tarmac under it have to shrink together.
+ */
+export function carWidthAt(cameraDepth, z, screenWidth) {
+  return ((cameraDepth / z) * ROAD_WIDTH * screenWidth) / 2 * CAR_WIDTH;
 }
 
 function polygon(ctx, x1, y1, x2, y2, x3, y3, x4, y4, color) {

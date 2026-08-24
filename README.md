@@ -28,9 +28,22 @@ R            restart from the start line
 touch        hold anywhere to drive; left and right thirds steer
 ```
 
-A lap is about a minute. Other cars hold their lane at between a third and
-two thirds of your top speed — hitting one costs you most of your momentum and
-knocks you sideways, so overtaking is the whole game.
+A lap is about a minute. Other cars hold one of three lanes at between a third
+and two thirds of your top speed — hitting one costs you most of your momentum
+and shoves you clear, so overtaking is the whole game.
+
+### One number for a car
+
+A car's width is a single constant, and both the drawing and the collision test
+read it. They were separate values once, and the result was a game where
+traffic rendered eleven times the size of the car you were driving and the
+lateral collision box covered forty-one percent of the road — every car on the
+circuit was permanently inside it, so no amount of steering could miss one.
+
+The player's car is projected at a fixed distance in front of the camera like
+any other object, rather than pinned to the bottom of the screen at a constant
+size. That is what keeps it and the traffic shrinking together, and it means a
+collision can be tested where the car actually is instead of at the camera.
 
 ## How it works
 

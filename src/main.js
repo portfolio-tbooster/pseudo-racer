@@ -1,4 +1,4 @@
-import { buildTrack, segmentAt, trackLength, ROAD_WIDTH, SEGMENT_LENGTH } from './road.js';
+import { buildTrack, segmentAt, trackLength, ROAD_WIDTH, SEGMENT_LENGTH, PLAYER_Z } from './road.js';
 import { randomSeed } from './rng.js';
 import { createPlayer, updatePlayer, MAX_SPEED } from './player.js';
 import { attachInput } from './input.js';
@@ -9,7 +9,7 @@ import { challengeLink, readChallenge } from './share.js';
 import {
   createTraffic, updateTraffic, collidingCar, applyCollision, trafficBySegment,
 } from './traffic.js';
-import { project, drawSegment, drawProp, drawHills } from './render.js';
+import { project, drawSegment, drawProp, drawHills, carWidthAt } from './render.js';
 import { THEME } from './theme.js';
 
 const FIELD_OF_VIEW = 100; // degrees
@@ -115,7 +115,12 @@ function draw() {
     // Traffic is positioned by the same projection as everything else, so it
     // shrinks with distance without knowing anything about perspective.
     for (const car of segment.cars ?? []) {
-      drawCarAt(ctx, sx + sw * car.x, sy, sw * 0.62, car.colors);
+      // A car nearer than the player's own is *behind* it — between the car
+      // and the camera — and this projection has no way to show that: it just
+      // grows without limit. Drop it once it draws level, a little past the
+      // point where a collision would already have fired.
+      if (segment.p1.camera.z < PLAYER_Z * 0.7) continue;
+      drawCarAt(ctx, sx + sw * car.x, sy, carWidthAt(cameraDepth, segment.p1.camera.z, width), car.colors);
     }
   }
 
@@ -123,7 +128,7 @@ function draw() {
   const shake = player.offRoad ? (Math.random() - 0.5) * 6 * (player.speed / MAX_SPEED) : 0;
   const bounce = Math.sin(player.position / 40) * (player.speed / MAX_SPEED) * 4 + shake;
   const steer = input.left ? -1 : input.right ? 1 : 0;
-  drawPlayerCar(ctx, width, height, steer, bounce);
+  drawPlayerCar(ctx, width, height, steer, bounce, carWidthAt(cameraDepth, PLAYER_Z, width));
 
   drawHud(ctx, width, {
     lapTime,

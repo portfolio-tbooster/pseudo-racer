@@ -42,7 +42,6 @@ export function drawCarAt(ctx, cx, groundY, w, colors) {
   ctx.fillRect(cx + w * 0.28, cy + h * 0.04, w * 0.16, h * 0.1);
 }
 
-export function drawPlayerCar(ctx, width, height, steer, bounce) {
-  const w = Math.min(width * 0.24, height * 0.42);
+export function drawPlayerCar(ctx, width, height, steer, bounce, w) {
   drawCarAt(ctx, width / 2 + steer * w * 0.35, height - w * 0.14 + bounce, w, THEME.car);
 }
