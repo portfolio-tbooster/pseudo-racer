@@ -5,6 +5,7 @@ import { attachInput } from './input.js';
 import { drawCar } from './car.js';
 import { drawHud } from './hud.js';
 import { bestFor, recordLap } from './storage.js';
+import { challengeLink, readChallenge } from './share.js';
 import { project, drawSegment, drawProp, drawHills } from './render.js';
 import { THEME } from './theme.js';
 
@@ -15,8 +16,14 @@ const DRAW_DISTANCE = 300; // segments
 const canvas = document.getElementById('stage');
 const ctx = canvas.getContext('2d');
 
-/** A seed in the URL makes any circuit reproducible by link. */
+/**
+ * Where a circuit comes from: a shared challenge wins, then an explicit seed
+ * in the query, then a fresh one.
+ */
+const challenge = readChallenge();
+
 function readSeed() {
+  if (challenge) return challenge.seed;
   const fromUrl = Number(new URLSearchParams(location.search).get('seed'));
   return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl >>> 0 : randomSeed();
 }
@@ -27,6 +34,7 @@ const segments = buildTrack(seed);
 let lapTime = 0;
 let lastPosition = 0;
 let best = bestFor(seed);
+const target = challenge?.target ?? null;
 const cameraDepth = 1 / Math.tan(((FIELD_OF_VIEW / 2) * Math.PI) / 180);
 
 const player = createPlayer();
@@ -103,6 +111,7 @@ function draw() {
   drawHud(ctx, width, {
     lapTime,
     best,
+    target,
     // Arbitrary but consistent: the number only has to move with the throttle.
     speed: player.speed / 100,
   });
@@ -144,6 +153,24 @@ function resize() {
   canvas.height = Math.floor(height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
+
+const shareButton = document.getElementById('share');
+shareButton.addEventListener('click', async () => {
+  const link = challengeLink(seed, best);
+  try {
+    await navigator.clipboard.writeText(link);
+  } catch {
+    // Clipboard access can be refused; putting it in the address bar still
+    // leaves the person something they can copy by hand.
+  }
+  location.hash = link.slice(link.indexOf('#') + 1);
+  shareButton.textContent = best ? 'Challenge copied' : 'Link copied';
+  shareButton.classList.add('is-done');
+  setTimeout(() => {
+    shareButton.textContent = 'Share this circuit';
+    shareButton.classList.remove('is-done');
+  }, 1800);
+});
 
 addEventListener('resize', resize);
 resize();

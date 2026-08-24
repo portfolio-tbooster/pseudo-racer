@@ -13,3 +13,34 @@ body {
   height: 100%;
   touch-action: none;
 }
+
+.share, .hint {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+}
+
+.share {
+  bottom: 18px;
+  padding: 9px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  background: rgba(16, 22, 29, 0.6);
+  backdrop-filter: blur(10px);
+  font-family: inherit;
+  color: #dbe6f0;
+  cursor: pointer;
+}
+
+.share:hover { background: rgba(16, 22, 29, 0.85); }
+.share.is-done { color: #8fe3b0; border-color: rgba(143, 227, 176, 0.45); }
+
+.hint {
+  bottom: 62px;
+  color: rgba(219, 230, 240, 0.45);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) { .hint { display: none; } }

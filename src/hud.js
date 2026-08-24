@@ -29,6 +29,16 @@ export function drawHud(ctx, width, state) {
   label(ctx, pad, pad + small * 2 + big * 1.9, 'BEST', small, 'rgba(255,255,255,0.65)');
   label(ctx, pad, pad + small * 2 + big * 2.9, formatLap(state.best), big * 0.72, '#8fe3b0');
 
+  if (state.target) {
+    const beaten = state.best !== null && state.best <= state.target;
+    label(ctx, pad, pad + small * 3 + big * 3.8, 'TARGET', small, 'rgba(255,255,255,0.65)');
+    label(
+      ctx, pad, pad + small * 3 + big * 4.6,
+      formatLap(state.target), big * 0.62,
+      beaten ? '#8fe3b0' : '#f0c46a',
+    );
+  }
+
   label(ctx, width - pad, pad + small, 'SPEED', small, 'rgba(255,255,255,0.65)', 'right');
   label(ctx, width - pad, pad + small + big, String(Math.round(state.speed)), big, '#ffffff', 'right');
   label(ctx, width - pad, pad + small + big * 1.5, 'KM/H', small, 'rgba(255,255,255,0.65)', 'right');
