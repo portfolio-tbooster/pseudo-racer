@@ -2,10 +2,13 @@ import { buildTrack, segmentAt, trackLength, ROAD_WIDTH, SEGMENT_LENGTH } from '
 import { randomSeed } from './rng.js';
 import { createPlayer, updatePlayer, MAX_SPEED } from './player.js';
 import { attachInput } from './input.js';
-import { drawCar } from './car.js';
+import { drawCarAt, drawPlayerCar } from './car.js';
 import { drawHud } from './hud.js';
 import { bestFor, recordLap } from './storage.js';
 import { challengeLink, readChallenge } from './share.js';
+import {
+  createTraffic, updateTraffic, collidingCar, applyCollision, trafficBySegment,
+} from './traffic.js';
 import { project, drawSegment, drawProp, drawHills } from './render.js';
 import { THEME } from './theme.js';
 
@@ -34,6 +37,7 @@ const segments = buildTrack(seed);
 let lapTime = 0;
 let lastPosition = 0;
 let best = bestFor(seed);
+const traffic = createTraffic(seed, trackLength(segments));
 const target = challenge?.target ?? null;
 const cameraDepth = 1 / Math.tan(((FIELD_OF_VIEW / 2) * Math.PI) / 180);
 
@@ -61,6 +65,7 @@ function draw() {
   // in front of it, so 300 segments cost barely more than a dozen.
   let maxy = height;
   const visible = [];
+  const cars = trafficBySegment(traffic, segments.length);
 
   // Curvature is not geometry — the road never actually bends. Each segment is
   // nudged sideways by the accumulated curve of everything in front of it,
@@ -90,15 +95,23 @@ function draw() {
     );
 
     maxy = segment.p2.screen.y;
-    if (segment.props) visible.push(segment);
+    segment.cars = cars.get(segment.index);
+    if (segment.props || segment.cars) visible.push(segment);
   }
 
   // Scenery goes back to front, after the road, so a near tree covers a far
   // one and neither is painted over by tarmac drawn later.
   for (let i = visible.length - 1; i >= 0; i--) {
     const segment = visible[i];
-    for (const prop of segment.props) {
-      drawProp(ctx, prop, THEME, segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w);
+    const { x: sx, y: sy, w: sw } = segment.p1.screen;
+
+    for (const prop of segment.props ?? []) {
+      drawProp(ctx, prop, THEME, sx, sy, sw);
+    }
+    // Traffic is positioned by the same projection as everything else, so it
+    // shrinks with distance without knowing anything about perspective.
+    for (const car of segment.cars ?? []) {
+      drawCarAt(ctx, sx + sw * car.x, sy, sw * 0.62, car.colors);
     }
   }
 
@@ -106,7 +119,7 @@ function draw() {
   const shake = player.offRoad ? (Math.random() - 0.5) * 6 * (player.speed / MAX_SPEED) : 0;
   const bounce = Math.sin(player.position / 40) * (player.speed / MAX_SPEED) * 4 + shake;
   const steer = input.left ? -1 : input.right ? 1 : 0;
-  drawCar(ctx, width, height, steer, bounce);
+  drawPlayerCar(ctx, width, height, steer, bounce);
 
   drawHud(ctx, width, {
     lapTime,
@@ -128,6 +141,10 @@ function frame(now) {
 
   const here = segmentAt(segments, player.position);
   updatePlayer(player, input, dt, trackLength(segments), here);
+
+  updateTraffic(traffic, dt, trackLength(segments));
+  const hit = collidingCar(player, traffic, trackLength(segments));
+  if (hit) applyCollision(player, hit);
 
   // The background slides opposite the corner, which is most of what sells a
   // bend as a change of direction rather than the road sliding sideways.

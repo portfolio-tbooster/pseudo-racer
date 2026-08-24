@@ -1,24 +1,19 @@
 import { THEME } from './theme.js';
 
 /**
- * The car, drawn from behind out of plain shapes.
+ * A car from behind, drawn from plain shapes.
  *
- * No sprite sheet and nothing to load. It leans with the steering and bobs
- * with the road, which is most of what sells the motion — a rigid car on a
- * moving road reads as a bug.
+ * One routine for the player and for traffic — they are the same object at
+ * different sizes, and the day they diverge is the day the traffic stops
+ * looking like it belongs on the same road.
  */
-export function drawCar(ctx, width, height, steer, bounce) {
-  const w = Math.min(width * 0.24, height * 0.42);
+export function drawCarAt(ctx, cx, groundY, w, colors) {
   const h = w * 0.52;
-  const cx = width / 2 + steer * w * 0.35;
-  const cy = height - h * 0.75 + bounce;
+  const cy = groundY - h * 0.55;
 
-  const body = THEME.car;
-
-  // Shadow first, so the car sits on the road rather than floats over it.
   ctx.fillStyle = 'rgba(0,0,0,0.28)';
   ctx.beginPath();
-  ctx.ellipse(cx, cy + h * 0.46, w * 0.5, h * 0.13, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, groundY, w * 0.5, h * 0.13, 0, 0, Math.PI * 2);
   ctx.fill();
 
   const wheel = (dx) => {
@@ -28,24 +23,26 @@ export function drawCar(ctx, width, height, steer, bounce) {
   wheel(-w * 0.4);
   wheel(w * 0.4);
 
-  // Body.
-  ctx.fillStyle = body.shell;
+  ctx.fillStyle = colors.shell;
   ctx.beginPath();
   ctx.roundRect(cx - w / 2, cy - h * 0.18, w, h * 0.62, w * 0.07);
   ctx.fill();
 
-  // Cabin.
-  ctx.fillStyle = body.shell;
   ctx.beginPath();
   ctx.roundRect(cx - w * 0.33, cy - h * 0.52, w * 0.66, h * 0.4, w * 0.06);
   ctx.fill();
 
-  ctx.fillStyle = body.glass;
+  ctx.fillStyle = colors.glass;
   ctx.beginPath();
   ctx.roundRect(cx - w * 0.27, cy - h * 0.46, w * 0.54, h * 0.26, w * 0.04);
   ctx.fill();
 
-  ctx.fillStyle = body.lamp;
+  ctx.fillStyle = colors.lamp;
   ctx.fillRect(cx - w * 0.44, cy + h * 0.04, w * 0.16, h * 0.1);
   ctx.fillRect(cx + w * 0.28, cy + h * 0.04, w * 0.16, h * 0.1);
+}
+
+export function drawPlayerCar(ctx, width, height, steer, bounce) {
+  const w = Math.min(width * 0.24, height * 0.42);
+  drawCarAt(ctx, width / 2 + steer * w * 0.35, height - w * 0.14 + bounce, w, THEME.car);
 }

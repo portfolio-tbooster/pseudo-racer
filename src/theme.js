@@ -16,6 +16,15 @@ export const THEME = {
 
   car: { shell: '#d9534a', glass: '#2b3038', lamp: '#ffd9a0' },
 
+  /** Other traffic. Anything but the player's colour, so you can pick yourself out. */
+  traffic: [
+    { shell: '#e0c15c', glass: '#2b3038', lamp: '#ffe6b8' },
+    { shell: '#5b8fd6', glass: '#252b33', lamp: '#ffe6b8' },
+    { shell: '#e8eaec', glass: '#2b3038', lamp: '#ffd9a0' },
+    { shell: '#6aa86f', glass: '#252b33', lamp: '#ffe6b8' },
+    { shell: '#8a8f98', glass: '#22272e', lamp: '#ffd9a0' },
+  ],
+
   /** Rolling hills behind the track: amplitude and shade per parallax layer. */
   hills: [
     { amplitude: 0.10, shade: '#5b7f96', drift: 0.25 },
