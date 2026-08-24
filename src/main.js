@@ -3,6 +3,8 @@ import { randomSeed } from './rng.js';
 import { createPlayer, updatePlayer, MAX_SPEED } from './player.js';
 import { attachInput } from './input.js';
 import { drawCar } from './car.js';
+import { drawHud } from './hud.js';
+import { bestFor, recordLap } from './storage.js';
 import { project, drawSegment, drawProp, drawHills } from './render.js';
 import { THEME } from './theme.js';
 
@@ -19,7 +21,12 @@ function readSeed() {
   return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl >>> 0 : randomSeed();
 }
 
-const segments = buildTrack(readSeed());
+const seed = readSeed();
+const segments = buildTrack(seed);
+
+let lapTime = 0;
+let lastPosition = 0;
+let best = bestFor(seed);
 const cameraDepth = 1 / Math.tan(((FIELD_OF_VIEW / 2) * Math.PI) / 180);
 
 const player = createPlayer();
@@ -92,6 +99,13 @@ function draw() {
   const bounce = Math.sin(player.position / 40) * (player.speed / MAX_SPEED) * 4 + shake;
   const steer = input.left ? -1 : input.right ? 1 : 0;
   drawCar(ctx, width, height, steer, bounce);
+
+  drawHud(ctx, width, {
+    lapTime,
+    best,
+    // Arbitrary but consistent: the number only has to move with the throttle.
+    speed: player.speed / 100,
+  });
 }
 
 let last = performance.now();
@@ -109,6 +123,14 @@ function frame(now) {
   // The background slides opposite the corner, which is most of what sells a
   // bend as a change of direction rather than the road sliding sideways.
   skyOffset += here.curve * (player.speed / MAX_SPEED) * dt * 220;
+
+  // Position wraps through the modulo at the finish line, so a drop is a lap.
+  lapTime += dt;
+  if (player.position < lastPosition) {
+    best = recordLap(seed, lapTime);
+    lapTime = 0;
+  }
+  lastPosition = player.position;
 
   draw();
   requestAnimationFrame(frame);
