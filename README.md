@@ -24,8 +24,13 @@ GitHub Pages works with no configuration at all.
 ↑ / W        throttle
 ↓ / S        brake
 ← → / A D    steer
+R            restart from the start line
 touch        hold anywhere to drive; left and right thirds steer
 ```
+
+A lap is about a minute. Other cars hold their lane at between a third and
+two thirds of your top speed — hitting one costs you most of your momentum and
+knocks you sideways, so overtaking is the whole game.
 
 ## How it works
 

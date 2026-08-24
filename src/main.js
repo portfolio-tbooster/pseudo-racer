@@ -35,7 +35,11 @@ const seed = readSeed();
 const segments = buildTrack(seed);
 
 let lapTime = 0;
+let lap = 1;
 let lastPosition = 0;
+let flash = 0;
+let flashTime = 0;
+let flashBest = false;
 let best = bestFor(seed);
 const traffic = createTraffic(seed, trackLength(segments));
 const target = challenge?.target ?? null;
@@ -123,8 +127,12 @@ function draw() {
 
   drawHud(ctx, width, {
     lapTime,
+    lap,
     best,
     target,
+    flash,
+    flashTime,
+    flashBest,
     // Arbitrary but consistent: the number only has to move with the throttle.
     speed: player.speed / 100,
   });
@@ -152,9 +160,15 @@ function frame(now) {
 
   // Position wraps through the modulo at the finish line, so a drop is a lap.
   lapTime += dt;
+  flash = Math.max(0, flash - dt);
+
   if (player.position < lastPosition) {
+    flashBest = best === null || lapTime < best;
+    flashTime = lapTime;
+    flash = 2.5;
     best = recordLap(seed, lapTime);
     lapTime = 0;
+    lap++;
   }
   lastPosition = player.position;
 
@@ -187,6 +201,22 @@ shareButton.addEventListener('click', async () => {
     shareButton.textContent = 'Share this circuit';
     shareButton.classList.remove('is-done');
   }, 1800);
+});
+
+/** Back to the start line, keeping the circuit and the best time. */
+function restart() {
+  player.position = 0;
+  player.speed = 0;
+  player.x = 0;
+  lapTime = 0;
+  lap = 1;
+  lastPosition = 0;
+  flash = 0;
+  skyOffset = 0;
+}
+
+addEventListener('keydown', (e) => {
+  if (e.code === 'KeyR') restart();
 });
 
 addEventListener('resize', resize);

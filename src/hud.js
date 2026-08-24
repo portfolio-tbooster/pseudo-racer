@@ -23,7 +23,7 @@ export function drawHud(ctx, width, state) {
   ctx.shadowColor = 'rgba(0,0,0,0.45)';
   ctx.shadowBlur = 6;
 
-  label(ctx, pad, pad + small, 'LAP', small, 'rgba(255,255,255,0.65)');
+  label(ctx, pad, pad + small, `LAP ${state.lap}`, small, 'rgba(255,255,255,0.65)');
   label(ctx, pad, pad + small + big, formatLap(state.lapTime), big, '#ffffff');
 
   label(ctx, pad, pad + small * 2 + big * 1.9, 'BEST', small, 'rgba(255,255,255,0.65)');
@@ -42,6 +42,20 @@ export function drawHud(ctx, width, state) {
   label(ctx, width - pad, pad + small, 'SPEED', small, 'rgba(255,255,255,0.65)', 'right');
   label(ctx, width - pad, pad + small + big, String(Math.round(state.speed)), big, '#ffffff', 'right');
   label(ctx, width - pad, pad + small + big * 1.5, 'KM/H', small, 'rgba(255,255,255,0.65)', 'right');
+
+  // A completed lap needs saying out loud. Without it the timer looks like it
+  // counts up forever — the lap is happening, nothing announces it.
+  if (state.flash > 0) {
+    const fade = Math.min(1, state.flash);
+    ctx.globalAlpha = fade;
+    const mid = width / 2;
+    label(ctx, mid, ctx.canvas.height / (window.devicePixelRatio || 1) * 0.34,
+      state.flashBest ? 'NEW BEST LAP' : 'LAP COMPLETE', big * 0.6,
+      state.flashBest ? '#8fe3b0' : 'rgba(255,255,255,0.9)', 'center');
+    label(ctx, mid, ctx.canvas.height / (window.devicePixelRatio || 1) * 0.34 + big,
+      formatLap(state.flashTime), big, '#ffffff', 'center');
+    ctx.globalAlpha = 1;
+  }
 
   ctx.restore();
 }
