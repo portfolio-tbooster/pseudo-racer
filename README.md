@@ -33,14 +33,24 @@ and two thirds of your top speed, change lane when something slower is in front
 of them, and tuck in behind when there is nowhere to go — hitting one costs you most of your momentum
 and shoves you clear, so overtaking is the whole game.
 
-### Objects are not culled with the ground they stand on
+### Objects are clipped to the skyline, not culled with the ground
 
 Segments whose tarmac is hidden behind a nearer rise are skipped — that clip is
-what makes a 300-segment draw distance cheap. But a tree standing on a hidden
-segment is still perfectly visible, and culling it along with the road made
-distant scenery blink: as the camera crests, every segment flips in and out of
-that test each frame, taking whatever stood on it along. Objects are collected
-for every segment in front of the camera; only the road polygon is skipped.
+what makes a 300-segment draw distance cheap. Deciding what to do with the
+things *standing* on those segments took three attempts:
+
+1. **Cull them with the road.** Distant scenery blinked: as the camera crests,
+   each segment flips in and out of the occlusion test every frame and takes
+   whatever stood on it along for the ride.
+2. **Never cull them.** No more blinking, but now trees and cars showed through
+   hills — the road had gone see-through.
+3. **Clip them.** Walking near to far, `maxy` is the skyline formed by
+   everything closer. Each segment records the value it saw, and objects on it
+   are clipped to that line.
+
+The third is the only one that is actually correct, and it costs one number per
+segment. A tree in a dip vanishes; a tree tall enough to break the ridge shows
+just its crown; and neither pops, because the skyline itself moves smoothly.
 
 ### One number for a car
 

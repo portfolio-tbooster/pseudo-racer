@@ -94,11 +94,14 @@ function draw() {
 
     if (segment.p1.camera.z <= cameraDepth) continue; // behind the camera
 
-    // The tarmac of this segment may be hidden behind a nearer rise — but a
-    // tree or a car standing on it is not. Culling objects along with the road
-    // surface is what made distant scenery blink: as the camera crests, each
-    // segment flips in and out of this test every frame, taking whatever was
-    // standing on it with it.
+    // The skyline formed by everything nearer than this segment. Anything on
+    // screen below it is behind a rise; anything above it is in clear air.
+    // Objects standing here get clipped to it, which is the whole of the
+    // occlusion: a tree in a dip disappears, a tree tall enough to break the
+    // ridge shows only its top, and both transition smoothly because the line
+    // itself moves smoothly.
+    segment.clipY = maxy;
+
     if (segment.p2.screen.y < maxy) {
       drawSegment(
         ctx, width,
@@ -119,6 +122,14 @@ function draw() {
     const segment = visible[i];
     const { x: sx, y: sy, w: sw } = segment.p1.screen;
 
+    // Wholly under the skyline of nearer terrain: nothing of it can be seen.
+    if (segment.clipY <= 0) continue;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, width, segment.clipY);
+    ctx.clip();
+
     for (const prop of segment.props ?? []) {
       drawProp(ctx, prop, THEME, sx, sy, sw);
     }
@@ -132,6 +143,8 @@ function draw() {
       if (segment.p1.camera.z < PLAYER_Z * 0.7) continue;
       drawCarAt(ctx, sx + sw * car.x, sy, carWidthAt(cameraDepth, segment.p1.camera.z, width), car.colors, car.kind);
     }
+
+    ctx.restore();
   }
 
   // Bob the car with the road under it and lean it into the steering.
