@@ -154,6 +154,31 @@ export const trackLength = (segments) => segments.length * SEGMENT_LENGTH;
  * that arrives with a backwards delta — would otherwise index off the front of
  * the array and return undefined.
  */
+/**
+ * The prop the player is about to hit, if any.
+ *
+ * Props sit off the tarmac, so this only ever fires once you have left the
+ * road — which is the point: leaving the road should cost you something more
+ * than grip. A window of segments is checked rather than one, because at top
+ * speed the car covers a whole segment per frame and would otherwise pass
+ * clean through a tree between two frames.
+ */
+export function propHazard(segments, z, x, carWidth) {
+  const from = Math.floor((z - CAR_HALF_LENGTH) / SEGMENT_LENGTH);
+  const to = Math.floor((z + CAR_HALF_LENGTH) / SEGMENT_LENGTH);
+
+  for (let i = from; i <= to; i++) {
+    const segment = segments[((i % segments.length) + segments.length) % segments.length];
+    for (const prop of segment.props ?? []) {
+      // Props are drawn at 0.55 of the road half-width, scaled by their size.
+      const reach = carWidth / 2 + 0.275 * prop.size;
+      if (Math.abs(prop.offset - x) < reach) return prop;
+    }
+  }
+
+  return null;
+}
+
 export const segmentAt = (segments, z) => {
   const n = Math.floor(z / SEGMENT_LENGTH);
   return segments[((n % segments.length) + segments.length) % segments.length];

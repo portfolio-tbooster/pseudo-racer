@@ -7,8 +7,8 @@ import { THEME } from './theme.js';
  * different sizes, and the day they diverge is the day the traffic stops
  * looking like it belongs on the same road.
  */
-export function drawCarAt(ctx, cx, groundY, w, colors) {
-  const h = w * 0.52;
+export function drawCarAt(ctx, cx, groundY, w, colors, kind = THEME.vehicles[0]) {
+  const h = w * kind.h;
   const cy = groundY - h * 0.55;
 
   ctx.fillStyle = 'rgba(0,0,0,0.28)';
@@ -29,12 +29,12 @@ export function drawCarAt(ctx, cx, groundY, w, colors) {
   ctx.fill();
 
   ctx.beginPath();
-  ctx.roundRect(cx - w * 0.33, cy - h * 0.52, w * 0.66, h * 0.4, w * 0.06);
+  ctx.roundRect(cx - (w * kind.cabinW) / 2, cy - h * 0.52, w * kind.cabinW, h * kind.cabinH, w * 0.06);
   ctx.fill();
 
   ctx.fillStyle = colors.glass;
   ctx.beginPath();
-  ctx.roundRect(cx - w * 0.27, cy - h * 0.46, w * 0.54, h * 0.26, w * 0.04);
+  ctx.roundRect(cx - (w * kind.glassW) / 2, cy - h * 0.46, w * kind.glassW, h * kind.glassH, w * 0.04);
   ctx.fill();
 
   ctx.fillStyle = colors.lamp;

@@ -16,6 +16,18 @@ export const THEME = {
 
   car: { shell: '#d9534a', glass: '#2b3038', lamp: '#ffd9a0' },
 
+  /**
+   * Vehicle silhouettes, in multiples of the car's width. One routine draws
+   * all of them; only these proportions differ, which is enough to tell a van
+   * from a coupé at a hundred metres and costs nothing to add another.
+   */
+  vehicles: [
+    { id: 'coupe', h: 0.52, cabinW: 0.66, cabinH: 0.40, glassW: 0.54, glassH: 0.26 },
+    { id: 'hatch', h: 0.60, cabinW: 0.76, cabinH: 0.46, glassW: 0.64, glassH: 0.30 },
+    { id: 'van', h: 0.80, cabinW: 0.92, cabinH: 0.54, glassW: 0.76, glassH: 0.24 },
+    { id: 'truck', h: 0.96, cabinW: 0.98, cabinH: 0.64, glassW: 0.58, glassH: 0.20 },
+  ],
+
   /** Other traffic. Anything but the player's colour, so you can pick yourself out. */
   traffic: [
     { shell: '#e0c15c', glass: '#2b3038', lamp: '#ffe6b8' },

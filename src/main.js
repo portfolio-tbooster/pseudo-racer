@@ -1,4 +1,7 @@
-import { buildTrack, segmentAt, trackLength, ROAD_WIDTH, SEGMENT_LENGTH, PLAYER_Z } from './road.js';
+import {
+  buildTrack, segmentAt, trackLength, propHazard,
+  ROAD_WIDTH, SEGMENT_LENGTH, PLAYER_Z, CAR_WIDTH,
+} from './road.js';
 import { randomSeed } from './rng.js';
 import { createPlayer, updatePlayer, MAX_SPEED } from './player.js';
 import { attachInput } from './input.js';
@@ -40,6 +43,7 @@ let lastPosition = 0;
 let flash = 0;
 let flashTime = 0;
 let flashBest = false;
+let crash = 0;
 let best = bestFor(seed);
 const traffic = createTraffic(seed, trackLength(segments));
 const target = challenge?.target ?? null;
@@ -126,12 +130,16 @@ function draw() {
       // grows without limit. Drop it once it draws level, a little past the
       // point where a collision would already have fired.
       if (segment.p1.camera.z < PLAYER_Z * 0.7) continue;
-      drawCarAt(ctx, sx + sw * car.x, sy, carWidthAt(cameraDepth, segment.p1.camera.z, width), car.colors);
+      drawCarAt(ctx, sx + sw * car.x, sy, carWidthAt(cameraDepth, segment.p1.camera.z, width), car.colors, car.kind);
     }
   }
 
   // Bob the car with the road under it and lean it into the steering.
-  const shake = player.offRoad ? (Math.random() - 0.5) * 6 * (player.speed / MAX_SPEED) : 0;
+  const shake = crash > 0
+    ? (Math.random() - 0.5) * 26 * crash
+    : player.offRoad
+      ? (Math.random() - 0.5) * 6 * (player.speed / MAX_SPEED)
+      : 0;
   const bounce = Math.sin(player.position / 40) * (player.speed / MAX_SPEED) * 4 + shake;
   const steer = input.left ? -1 : input.right ? 1 : 0;
   drawPlayerCar(ctx, width, height, steer, bounce, carWidthAt(cameraDepth, PLAYER_Z, width));
@@ -165,6 +173,7 @@ function frame(now) {
   const hit = collidingCar(player, traffic, trackLength(segments));
   if (hit) applyCollision(player, hit);
 
+
   // The background slides opposite the corner, which is most of what sells a
   // bend as a change of direction rather than the road sliding sideways.
   skyOffset += here.curve * (player.speed / MAX_SPEED) * dt * 220;
@@ -172,6 +181,7 @@ function frame(now) {
   // Position wraps through the modulo at the finish line, so a drop is a lap.
   lapTime += dt;
   flash = Math.max(0, flash - dt);
+  crash = Math.max(0, crash - dt);
 
   if (player.position < lastPosition) {
     flashBest = best === null || lapTime < best;
