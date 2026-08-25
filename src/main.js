@@ -173,6 +173,14 @@ function frame(now) {
   const hit = collidingCar(player, traffic, trackLength(segments));
   if (hit) applyCollision(player, hit);
 
+  // Off the road there is scenery, and it does not move out of the way.
+  const obstacle = propHazard(segments, player.position + PLAYER_Z, player.x, CAR_WIDTH);
+  if (obstacle) {
+    player.speed *= 0.18;
+    player.x += player.x >= obstacle.offset ? 0.3 : -0.3;
+    crash = 0.45;
+  }
+
 
   // The background slides opposite the corner, which is most of what sells a
   // bend as a change of direction rather than the road sliding sideways.
