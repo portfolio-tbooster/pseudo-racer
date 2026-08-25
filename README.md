@@ -29,8 +29,18 @@ touch        hold anywhere to drive; left and right thirds steer
 ```
 
 A lap is about a minute. Other cars hold one of three lanes at between a third
-and two thirds of your top speed — hitting one costs you most of your momentum
+and two thirds of your top speed, change lane when something slower is in front
+of them, and tuck in behind when there is nowhere to go — hitting one costs you most of your momentum
 and shoves you clear, so overtaking is the whole game.
+
+### Objects are not culled with the ground they stand on
+
+Segments whose tarmac is hidden behind a nearer rise are skipped — that clip is
+what makes a 300-segment draw distance cheap. But a tree standing on a hidden
+segment is still perfectly visible, and culling it along with the road made
+distant scenery blink: as the camera crests, every segment flips in and out of
+that test each frame, taking whatever stood on it along. Objects are collected
+for every segment in front of the camera; only the road polygon is skipped.
 
 ### One number for a car
 
@@ -44,6 +54,11 @@ The player's car is projected at a fixed distance in front of the camera like
 any other object, rather than pinned to the bottom of the screen at a constant
 size. That is what keeps it and the traffic shrinking together, and it means a
 collision can be tested where the car actually is instead of at the camera.
+
+Contact — with a car or with a tree — deflects you *fully* clear. A shove
+shorter than the collision reach leaves the two shapes still overlapping on the
+next frame, so the hit repeats every frame until something drifts apart, which
+feels like being held against the obstacle rather than bouncing off it.
 
 ## How it works
 

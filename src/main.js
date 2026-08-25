@@ -1,5 +1,5 @@
 import {
-  buildTrack, segmentAt, trackLength, propHazard,
+  buildTrack, segmentAt, trackLength, propHazard, propReach,
   ROAD_WIDTH, SEGMENT_LENGTH, PLAYER_Z, CAR_WIDTH,
 } from './road.js';
 import { randomSeed } from './rng.js';
@@ -177,7 +177,10 @@ function frame(now) {
   const obstacle = propHazard(segments, player.position + PLAYER_Z, player.x, CAR_WIDTH);
   if (obstacle) {
     player.speed *= 0.18;
-    player.x += player.x >= obstacle.offset ? 0.3 : -0.3;
+    // Deflected fully clear, as with a car. A shove shorter than the reach
+    // leaves the car lodged against the tree, hitting it again every frame.
+    const side = player.x >= obstacle.offset ? 1 : -1;
+    player.x = obstacle.offset + side * propReach(obstacle, CAR_WIDTH) * 1.08;
     crash = 0.45;
   }
 

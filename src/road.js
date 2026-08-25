@@ -163,6 +163,12 @@ export const trackLength = (segments) => segments.length * SEGMENT_LENGTH;
  * speed the car covers a whole segment per frame and would otherwise pass
  * clean through a tree between two frames.
  */
+/**
+ * How close the car's centre can get to a prop's centre before they touch.
+ * Props are drawn at 0.55 of the road half-width, scaled by their size.
+ */
+export const propReach = (prop, carWidth) => carWidth / 2 + 0.275 * prop.size;
+
 export function propHazard(segments, z, x, carWidth) {
   const from = Math.floor((z - CAR_HALF_LENGTH) / SEGMENT_LENGTH);
   const to = Math.floor((z + CAR_HALF_LENGTH) / SEGMENT_LENGTH);
@@ -170,9 +176,7 @@ export function propHazard(segments, z, x, carWidth) {
   for (let i = from; i <= to; i++) {
     const segment = segments[((i % segments.length) + segments.length) % segments.length];
     for (const prop of segment.props ?? []) {
-      // Props are drawn at 0.55 of the road half-width, scaled by their size.
-      const reach = carWidth / 2 + 0.275 * prop.size;
-      if (Math.abs(prop.offset - x) < reach) return prop;
+      if (Math.abs(prop.offset - x) < propReach(prop, carWidth)) return prop;
     }
   }
 
