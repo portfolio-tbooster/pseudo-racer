@@ -89,16 +89,22 @@ function draw() {
     dx += segment.curve;
 
     if (segment.p1.camera.z <= cameraDepth) continue; // behind the camera
-    if (segment.p2.screen.y >= maxy) continue; // hidden by a nearer segment
 
-    drawSegment(
-      ctx, width,
-      segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w,
-      segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w,
-      THEME, segment.dark,
-    );
+    // The tarmac of this segment may be hidden behind a nearer rise — but a
+    // tree or a car standing on it is not. Culling objects along with the road
+    // surface is what made distant scenery blink: as the camera crests, each
+    // segment flips in and out of this test every frame, taking whatever was
+    // standing on it with it.
+    if (segment.p2.screen.y < maxy) {
+      drawSegment(
+        ctx, width,
+        segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w,
+        segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w,
+        THEME, segment.dark,
+      );
+      maxy = segment.p2.screen.y;
+    }
 
-    maxy = segment.p2.screen.y;
     segment.cars = cars.get(segment.index);
     if (segment.props || segment.cars) visible.push(segment);
   }
